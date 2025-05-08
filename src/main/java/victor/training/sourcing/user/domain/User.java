@@ -1,6 +1,7 @@
 package victor.training.sourcing.user.domain;
 
 import lombok.Getter;
+import victor.training.sourcing.user.command.UserCommandRestApi;
 import victor.training.sourcing.user.command.UserCommandRestApi.CreateUserRequest;
 
 import java.time.LocalDateTime;
@@ -22,7 +23,7 @@ public class User {
   private LocalDateTime lastLogin;
 
   public static String getStreamName(String email) {
-    return "user-"+email.toLowerCase();
+    return "user-" + email.toLowerCase();
   }
 
   public static String getEmailFromStreamId(String streamId) {
@@ -41,10 +42,20 @@ public class User {
     return allEvents;
   }
 
+
+  public UserPersonalDetailsUpdated update(UserCommandRestApi.UpdateUserRequest request) {
+    if (!active) {
+      throw new IllegalArgumentException();
+    }
+    return new UserPersonalDetailsUpdated()
+        .name(request.name())
+        .departmentId(Objects.requireNonNull(request.departmentId()));
+  }
+
   public List<UserEvent> confirmEmail(String email, String validationToken) {
     if (!validationToken.equals(emailValidationToken)
         && !"CHEAT".equals(validationToken)
-        ) {
+    ) {
       throw new IllegalArgumentException("Token mismatch! Are you trying to 'CHEAT' ?");
     }
     // ❌Traditional: overwrite the old state
@@ -58,6 +69,20 @@ public class User {
   }
 
   // ✅ Changes to state only happen in this method
+  public UserRoleGranted grantRole(String role) {
+    if (roles.contains(role) || !active) {
+      throw new IllegalArgumentException();
+    }
+    return new UserRoleGranted().role(role);
+  }
+
+  public UserRoleRevoked revokeRole(String role) {
+    if (!roles.contains(role) || !active) {
+      throw new IllegalArgumentException();
+    }
+    return new UserRoleRevoked().role(role);
+  }
+
   public void apply(UserEvent userEvent) {
     switch (userEvent) {
       case UserCreated event -> {
@@ -67,16 +92,26 @@ public class User {
         this.departmentId = event.departmentId();
         this.active = true;
       }
-      case UserRoleGranted event -> {
-        roles.add(event.role());
-      }
-
-      case UserPersonalDetailsUpdated event -> { //TODO name too broad.
+      case UserPersonalDetailsUpdated event -> {
         this.name = event.name();
         this.departmentId = event.departmentId();
       }
+      case UserRoleGranted event -> roles.add(event.role());
+      case UserRoleRevoked event -> roles.remove(event.role());
       default -> throw new IllegalArgumentException();
     }
   }
 
+  public UserDeactivated deactivate() {
+    if (!active) {
+      throw new IllegalArgumentException();
+    }
+    return new UserDeactivated();
+  }
+  public UserActivated activate() {
+    if (active) {
+      throw new IllegalArgumentException();
+    }
+    return new UserActivated();
+  }
 }

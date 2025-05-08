@@ -26,7 +26,9 @@ public class GsonUtil {
   public static EventData toEventData(AbstractEvent event) {
     var eventType = event.getClass().getSimpleName();
     var jsonString = gson.toJson(event);
-    return EventData.builderAsJson(eventType, jsonString.getBytes()).build();
+    return EventData.builderAsJson(eventType, jsonString.getBytes())
+//        .metadataAsBytes(new EventMetadata(SecurityContextHolder.....))
+    .build();
   }
 
   @SuppressWarnings("unchecked")

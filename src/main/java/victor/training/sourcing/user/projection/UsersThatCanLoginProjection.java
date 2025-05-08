@@ -23,9 +23,18 @@ import static java.util.stream.Collectors.toSet;
 @Slf4j
 public class UsersThatCanLoginProjection extends SubscriptionListener {
   // a user can login if it's active and its email was confirmed
+  // - a user that did not YET confirmed its email address cannot login
+  // - a user that was banned (active=false) cannot login
+
+  // for performance you can memoize this data in a cache =>
+  // make the read projection persistent eg in Redis/Mongo/SQL
+  private Set<String> activateUsers = new HashSet<>();
+  private Set<String> confirmedUsers = new HashSet<>();
 
   public UsersThatCanLoginProjection(EventStoreDBClient eventStore) {
-    eventStore.subscribeToAll(this, SubscribeToAllOptions.get().fromStart());
+    eventStore.subscribeToAll(this, SubscribeToAllOptions.get()
+        .filter(SubscriptionFilter.newBuilder().addStreamNamePrefix("user-").build())
+        .fromStart());
   }
 
   public UsersThatCanLoginProjection(EventStoreDBClient eventStore, Long asOfPosition) throws ExecutionException, InterruptedException {
@@ -68,15 +77,20 @@ public class UsersThatCanLoginProjection extends SubscriptionListener {
   @Override
   public void onEvent(Subscription subscription, ResolvedEvent resolvedEvent) {
     var streamId = resolvedEvent.getEvent().getStreamId();
-    if (!streamId.startsWith("user-")) {
-      return;
-    }
     String email = User.getEmailFromStreamId(streamId);
-    var userEvent = GsonUtil.fromEventDataSealed(resolvedEvent.getEvent(), UserEvent.class);
+    UserEvent userEvent = GsonUtil.fromEventDataSealed(resolvedEvent.getEvent(), UserEvent.class);
+    switch(userEvent) {
+      case UserEvent.UserActivated event -> activateUsers.add(email);
+      case UserEvent.UserDeactivated event -> activateUsers.remove(email);
+      case UserEvent.UserEmailConfirmed event -> confirmedUsers.add(email);
+      default -> {/*ignored*/}
+    }
   }
 
   private Set<String> getUsersThatCanLogin() {
-    return null;//.TODO;
+    return confirmedUsers.stream()
+        .filter(activateUsers::contains)
+        .collect(toSet());
   }
 
   @RestController
@@ -89,7 +103,10 @@ public class UsersThatCanLoginProjection extends SubscriptionListener {
       projection = new UsersThatCanLoginProjection(this.eventStore);
     }
 
+    //
     // http://localhost:8080/users-to-login
+//    @GetMapping("/users/{email}/can-login") >> to easy: hydrate the user > done
+    // TODO a better: a searhc: what users with name j* can login
     @GetMapping("/users-to-login")
     public Set<String> getUsersToLogin(
         @RequestParam(required = false) Long position,

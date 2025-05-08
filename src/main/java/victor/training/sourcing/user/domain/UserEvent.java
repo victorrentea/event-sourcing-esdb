@@ -6,13 +6,7 @@ import victor.training.sourcing.AbstractEvent;
 import java.time.LocalDateTime;
 
 public sealed abstract class UserEvent extends AbstractEvent
-    permits UserEvent.ConfirmationEmailSent,
-    UserEvent.UserActivated,
-    UserEvent.UserCreated,
-    UserEvent.UserEmailConfirmed,
-    UserEvent.UserLoggedIn,
-    UserEvent.UserRoleGranted,
-    UserEvent.UserPersonalDetailsUpdated {
+    permits UserEvent.ConfirmationEmailSent, UserEvent.UserActivated, UserEvent.UserCreated, UserEvent.UserDeactivated, UserEvent.UserEmailConfirmed, UserEvent.UserLoggedIn, UserEvent.UserPersonalDetailsUpdated, UserEvent.UserRoleGranted, UserEvent.UserRoleRevoked {
 
   @Data
   public static final class UserCreated extends UserEvent {
@@ -21,6 +15,7 @@ public sealed abstract class UserEvent extends AbstractEvent
     private String lastName;
     private String email;
     private String departmentId;
+    // TODO @tech-backlong merge roles in here to have events match the user intent
   }
 
   @Data
@@ -55,4 +50,15 @@ public sealed abstract class UserEvent extends AbstractEvent
   public static final class UserRoleGranted extends UserEvent {
     private String role;
   }
+  @Data
+  public static final class UserRoleRevoked extends UserEvent {
+    private String role;
+  }
+
+  @Data
+  public static final class UserDeactivated extends UserEvent {
+    private String role;
+  }
+
+
 }
