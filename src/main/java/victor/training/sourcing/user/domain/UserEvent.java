@@ -6,14 +6,14 @@ import victor.training.sourcing.AbstractEvent;
 import java.time.LocalDateTime;
 
 public sealed abstract class UserEvent extends AbstractEvent
-    permits
-    UserEvent.UserCreated,
-    UserEvent.ConfirmationEmailSent,
+    permits UserEvent.ConfirmationEmailSent,
     UserEvent.UserActivated,
+    UserEvent.UserCreated,
     UserEvent.UserEmailConfirmed,
     UserEvent.UserEmailUpdated,
     UserEvent.UserLoggedIn,
-    UserEvent.UserUpdated {
+    UserEvent.UserRoleGranted,
+    UserEvent.UserPersonalDetailsUpdated {
 
   @Data
   public static final class UserCreated extends UserEvent {
@@ -45,16 +45,20 @@ public sealed abstract class UserEvent extends AbstractEvent
     // TODO race: change emails twice (first: incorrect, second: correct)
   }
 
-
   @Data
   public static final class UserLoggedIn extends UserEvent {
+
     private String application;
     private LocalDateTime loginTime;
   }
-
   @Data
-  public static final class UserUpdated extends UserEvent {
+  public static final class UserPersonalDetailsUpdated extends UserEvent {
+
     private String name;
     private String departmentId;
+  }
+  @Data
+  public static final class UserRoleGranted extends UserEvent {
+    private String role;
   }
 }

@@ -35,9 +35,10 @@ public class UserCommandRestApi {
   @PostMapping
   public void createUser(@RequestBody @Validated CreateUserRequest request) {
     List<UserEvent> events = User.create(request);
-    eventStore.appendToStream(User.getStreamName(request.email()),
+    var streamId = User.getStreamName(request.email());
+    eventStore.appendToStream("user-"+ request.email(),
         AppendToStreamOptions.get().expectedRevision(ExpectedRevision.noStream()), // Unique-Key in Event-Sourcing
-        events.stream().map(GsonUtil::toEventData).iterator());
+        events.stream().map(GsonUtil::toEventData).iterator()); // atomic write iff the streamId is not present
     // TODO discuss:
     //  a) UserCreated{roles} = coarse, mapped to domain action (publisher convenience) 💖
     //  b) UserRolesGranted{roles} = coarse-grained aggregated event

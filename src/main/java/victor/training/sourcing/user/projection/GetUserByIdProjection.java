@@ -1,6 +1,7 @@
 package victor.training.sourcing.user.projection;
 
 import com.eventstore.dbclient.EventStoreDBClient;
+import com.eventstore.dbclient.ReadResult;
 import com.eventstore.dbclient.ReadStreamOptions;
 import com.eventstore.dbclient.ResolvedEvent;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +37,12 @@ public class GetUserByIdProjection {
 
   @GetMapping("users/{email}")
   public GetUserResponse getUser(@PathVariable String email) throws ExecutionException, InterruptedException {
-    User user = null;
+    var readResult = eventStore.readStream("user-" + email, ReadStreamOptions.get().fromStart()).get();
+
+    User user = new User();
+    for (var resolvedEvent : readResult.getEvents()) {
+      user.apply(GsonUtil.fromEventDataSealed(resolvedEvent.getEvent(), UserEvent.class));
+    }
     return GetUserResponse.fromUser(user);
   }
 

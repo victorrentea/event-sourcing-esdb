@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import static victor.training.sourcing.user.domain.UserEvent.*;
 
@@ -35,16 +34,11 @@ public class User {
         .name(request.name())
         .email(request.email())
         .departmentId(Objects.requireNonNull(request.departmentId()));
-
-    return List.of(userCreatedEvent);
-//    List<UserRoleGranted> rolesGrantedEvent = request.roles().stream()
-//        .map(role -> new UserRoleGranted().role(role))
-//        .toList();
-
-//    return Stream.concat(
-//        Stream.of(userCreatedEvent),
-//        rolesGrantedEvent.stream()
-//    ).toList();
+    List<UserEvent> allEvents = new ArrayList<>(List.of(userCreatedEvent));
+    for (var role : request.roles()) {
+      allEvents.add(new UserRoleGranted().role(role));
+    }
+    return allEvents;
   }
 
   public List<UserEvent> confirmEmail(String email, String validationToken) {
@@ -73,7 +67,11 @@ public class User {
         this.departmentId = event.departmentId();
         this.active = true;
       }
-      case UserUpdated event -> {
+      case UserRoleGranted event -> {
+        roles.add(event.role());
+      }
+
+      case UserPersonalDetailsUpdated event -> { //TODO name too broad.
         this.name = event.name();
         this.departmentId = event.departmentId();
       }
