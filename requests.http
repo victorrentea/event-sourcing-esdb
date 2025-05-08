@@ -1,0 +1,59 @@
+@userId=jane@b.com
+@application=CORE
+
+### create user
+POST http://127.0.0.1:8080/users
+Content-Type: application/json
+
+{
+  "email": "jane@b.com",
+  "name": "Jane Doe",
+  "departmentId": "IT",
+  "roles": [ "app1:USER"]
+}
+
+### get user
+GET http://127.0.0.1:8080/users/{{userId}}
+
+
+### update user
+PUT http://127.0.0.1:8080/users/{{userId}}
+Content-Type: application/json
+
+{
+  "email": "jane@b.com",
+  "name": "Jane Doe",
+  "departmentId": "Laundry"
+}
+
+### confirm email
+PUT http://127.0.0.1:8080/users/{{userId}}/confirm-email?token=CHEAT
+
+### add role to user
+PUT http://127.0.0.1:8080/users/{{userId}}/roles/app2:ADMIN
+
+### remove role from user
+DELETE http://127.0.0.1:8080/users/{{userId}}/roles/app1:ADMIN
+
+### activate user
+PUT http://127.0.0.1:8080/users/{{userId}}/activate
+
+### deactivate user
+PUT http://127.0.0.1:8080/users/{{userId}}/deactivate
+
+### notify login into an app
+GET http://127.0.0.1:8080/users/{{userId}}/login/{{application}}
+
+### see last login per user into an app
+GET http://127.0.0.1:8080/logins/{{application}}
+
+### get users able to login
+GET http://127.0.0.1:8080/users-to-login
+
+### get users able to login as of position
+GET http://127.0.0.1:8080/users-to-login?position=10
+
+### get users able to login as of time
+GET http://127.0.0.1:8080/users-to-login?time=2025-05-08T01:10:00Z
+
+###

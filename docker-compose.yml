@@ -1,0 +1,7 @@
+services:
+  esdb-local:
+    image: eventstore/eventstore:latest
+    environment:
+      EVENTSTORE_INSECURE: true
+    ports:
+      - "2113:2113"
