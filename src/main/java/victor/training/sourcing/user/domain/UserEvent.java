@@ -10,7 +10,6 @@ public sealed abstract class UserEvent extends AbstractEvent
     UserEvent.UserActivated,
     UserEvent.UserCreated,
     UserEvent.UserEmailConfirmed,
-    UserEvent.UserEmailUpdated,
     UserEvent.UserLoggedIn,
     UserEvent.UserRoleGranted,
     UserEvent.UserPersonalDetailsUpdated {
@@ -31,11 +30,6 @@ public sealed abstract class UserEvent extends AbstractEvent
 
   @Data
   public static final class UserActivated extends UserEvent {
-    private String email;
-  }
-
-  @Data
-  public static final class UserEmailUpdated extends UserEvent {
     private String email;
   }
 
