@@ -10,12 +10,9 @@ public sealed abstract class UserEvent extends AbstractEvent
     UserEvent.UserCreated,
     UserEvent.ConfirmationEmailSent,
     UserEvent.UserActivated,
-    UserEvent.UserDeactivated,
     UserEvent.UserEmailConfirmed,
     UserEvent.UserEmailUpdated,
     UserEvent.UserLoggedIn,
-    UserEvent.UserRoleGranted,
-    UserEvent.UserRoleRevoked,
     UserEvent.UserUpdated {
 
   @Data
@@ -56,24 +53,8 @@ public sealed abstract class UserEvent extends AbstractEvent
   }
 
   @Data
-  public static final class UserRoleGranted extends UserEvent {
-    private String role;
-  }
-
-  @Data
-  public static final class UserRoleRevoked extends UserEvent {
-    // TODO race with UserRoleAssign (eg from bulk imports) ?
-    private String role;
-  }
-
-  @Data
   public static final class UserUpdated extends UserEvent {
     private String name;
     private String departmentId;
-  }
-
-  @Data
-  public static final class UserDeactivated extends UserEvent {
-    private String email;
   }
 }

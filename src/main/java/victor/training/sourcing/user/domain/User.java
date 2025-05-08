@@ -36,14 +36,15 @@ public class User {
         .email(request.email())
         .departmentId(Objects.requireNonNull(request.departmentId()));
 
-    List<UserRoleGranted> rolesGrantedEvent = request.roles().stream()
-        .map(role -> new UserRoleGranted().role(role))
-        .toList();
+    return List.of(userCreatedEvent);
+//    List<UserRoleGranted> rolesGrantedEvent = request.roles().stream()
+//        .map(role -> new UserRoleGranted().role(role))
+//        .toList();
 
-    return Stream.concat(
-        Stream.of(userCreatedEvent),
-        rolesGrantedEvent.stream()
-    ).toList();
+//    return Stream.concat(
+//        Stream.of(userCreatedEvent),
+//        rolesGrantedEvent.stream()
+//    ).toList();
   }
 
   public List<UserEvent> confirmEmail(String email, String validationToken) {
@@ -76,22 +77,7 @@ public class User {
         this.name = event.name();
         this.departmentId = event.departmentId();
       }
-      case UserEmailUpdated event -> {
-        this.email = event.email();
-        this.emailConfirmed = false;
-      }
-      case UserEmailConfirmed event -> {
-//        if (!event.email().equals(email)) { // TODO discuss: when to validate?
-//          throw new IllegalArgumentException("Email mismatch: " + event.email() + " vs " + email);
-//        }
-        this.emailConfirmed = true;
-      }
-      case UserDeactivated ignored -> active = false;
-      case UserActivated ignored -> active = true;
-      case UserRoleGranted event -> roles.add(event.role());
-      case UserRoleRevoked event -> roles.remove(event.role());
-      case UserLoggedIn event -> this.lastLogin = event.loginTime();
-      case ConfirmationEmailSent event -> this.emailValidationToken = event.emailConfirmationToken();
+      default -> throw new IllegalArgumentException();
     }
   }
 

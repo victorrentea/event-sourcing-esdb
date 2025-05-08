@@ -36,12 +36,7 @@ public class GetUserByIdProjection {
 
   @GetMapping("users/{email}")
   public GetUserResponse getUser(@PathVariable String email) throws ExecutionException, InterruptedException {
-    var readResult = eventStore.readStream(User.getStreamName(email), ReadStreamOptions.get().fromStart()).get();
-    User user = new User();
-    for (ResolvedEvent re : readResult.getEvents()) {
-      UserEvent event = GsonUtil.fromEventDataSealed(re.getEvent(), UserEvent.class);
-      user.apply(event);
-    }
+    User user = null;
     return GetUserResponse.fromUser(user);
   }
 

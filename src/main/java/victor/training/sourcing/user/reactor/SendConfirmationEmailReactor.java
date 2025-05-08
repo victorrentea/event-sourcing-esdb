@@ -32,12 +32,8 @@ public class SendConfirmationEmailReactor extends SubscriptionListener {
       return;
     }
     String emailConfirmationToken = UUID.randomUUID().toString();
-    var email = eventOpt.get().email();
-    sendEmail(email, emailConfirmationToken);
-
-    eventStore.appendToStream(User.getStreamName(email), GsonUtil.toEventData(
-        new ConfirmationEmailSent()
-            .emailConfirmationToken(emailConfirmationToken)));
+    // TODO send email
+    // TODO write token in user
   }
 
   private void sendEmail(String email, String emailConfirmationToken) {

@@ -23,8 +23,6 @@ import static java.util.stream.Collectors.toSet;
 @Slf4j
 public class UsersThatCanLoginProjection extends SubscriptionListener {
   // a user can login if it's active and its email was confirmed
-  private final Set<String> confirmedEmails = new HashSet<>();
-  private final Set<String> activeUserEmails = new HashSet<>();
 
   public UsersThatCanLoginProjection(EventStoreDBClient eventStore) {
     eventStore.subscribeToAll(this, SubscribeToAllOptions.get().fromStart());
@@ -75,18 +73,10 @@ public class UsersThatCanLoginProjection extends SubscriptionListener {
     }
     String email = User.getEmailFromStreamId(streamId);
     var userEvent = GsonUtil.fromEventDataSealed(resolvedEvent.getEvent(), UserEvent.class);
-    switch(userEvent) {
-      case UserEvent.UserCreated ignored -> activeUserEmails.add(email);
-      case UserEvent.UserActivated ignored -> activeUserEmails.add(email);
-      case UserEvent.UserDeactivated ignored -> activeUserEmails.remove(email);
-      case UserEvent.UserEmailConfirmed ignored -> confirmedEmails.add(email);
-      case UserEvent.UserEmailUpdated ignored -> confirmedEmails.remove(email);
-      default -> {/*ignore*/}
-    }
   }
 
   private Set<String> getUsersThatCanLogin() {
-    return confirmedEmails.stream().filter(activeUserEmails::contains).collect(toSet());
+    return null;//.TODO;
   }
 
   @RestController
