@@ -15,7 +15,7 @@ import java.io.InputStreamReader;
 import java.util.Enumeration;
 import java.util.stream.Collectors;
 
-@Component
+//@Component
 public class PrintRequestsAsCurlFilter extends HttpFilter {
 
   @Override

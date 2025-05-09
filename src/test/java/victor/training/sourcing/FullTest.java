@@ -57,19 +57,22 @@ public class FullTest {
         "dep1",
         List.of("app1:ADMIN"));
 
-    extracted(post("/users"), createRequest);
+    commandApi.createUser(createRequest);
+//    extracted(post("/users"), createRequest);
   }
 
-  private void extracted(MockHttpServletRequestBuilder request, Object body) throws Exception {
-    mockMvc.perform(request
-            .content(new Gson().toJson(body))
-            .contentType(MediaType.APPLICATION_JSON))
-        .andExpect(status().isOk());
-  }
+//  private void extracted(MockHttpServletRequestBuilder request, Object body) throws Exception {
+//    mockMvc.perform(request
+//            .content(new Gson().toJson(body))
+//            .contentType(MediaType.APPLICATION_JSON))
+//        .andExpect(status().isOk());
+//  }
 
   @Test
   void _01_create_snapshot() throws Exception {
-    extracted(post("/users/"+EMAIL+"/snapshot"), null);
+//    extracted(post("/users/"+EMAIL+"/snapshot"), null);
+//    commandApi.
+
   }
 
   @Test

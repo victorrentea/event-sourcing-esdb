@@ -6,6 +6,7 @@ import com.google.gson.*;
 import victor.training.sourcing.user.domain.UserEvent;
 
 import java.lang.reflect.Type;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Objects;
@@ -18,6 +19,12 @@ public class GsonUtil {
   private static final Gson gson = new GsonBuilder()
       .registerTypeAdapter(LocalDateTime.class, new JsonSerializer<LocalDateTime>() {
         public JsonElement serialize(LocalDateTime src, Type typeOfSrc, JsonSerializationContext context) {
+          return new JsonPrimitive(src.toString());
+        }
+      })
+      .registerTypeAdapter(
+          LocalDate.class, new JsonSerializer<LocalDate>() {
+        public JsonElement serialize(LocalDate src, Type typeOfSrc, JsonSerializationContext context) {
           return new JsonPrimitive(src.toString());
         }
       })

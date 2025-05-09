@@ -27,8 +27,8 @@ public class User {
   private String departmentId;
   private Boolean active = false;
   private final List<String> roles = new ArrayList<>();
-  private LocalDateTime lastLogin;
-  private LocalDate birthDate;
+//  private LocalDateTime lastLogin;
+//  private LocalDate birthDate;
 
   /** @return the event stream name in eventstore db*/
   public static String stream(String email) {
@@ -95,7 +95,7 @@ public class User {
   }
 
   public UserRoleRevoked revokeRole(String role) {
-    if (!roles.contains(role) || !active || birthDate.getYear() < 1996) {
+    if (!roles.contains(role) || !active /*|| birthDate.getYear() < 1996*/) {
       throw new IllegalArgumentException();
     }
     return new UserRoleRevoked().role(role);
