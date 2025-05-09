@@ -3,6 +3,7 @@ package victor.training.sourcing.user.domain;
 import lombok.Data;
 import victor.training.sourcing.AbstractEvent;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public sealed abstract class UserEvent extends AbstractEvent
@@ -15,6 +16,7 @@ public sealed abstract class UserEvent extends AbstractEvent
     private String lastName;
     private String email;
     private String departmentId;
+    private LocalDate birthDate;
     // TODO @tech-backlog merge roles in here to have events match the user intent
   }
 

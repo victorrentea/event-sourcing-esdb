@@ -8,9 +8,11 @@ import victor.training.sourcing.GsonUtil;
 import victor.training.sourcing.user.command.UserCommandRestApi;
 import victor.training.sourcing.user.command.UserCommandRestApi.CreateUserRequest;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 import static victor.training.sourcing.user.domain.UserEvent.*;
@@ -26,6 +28,7 @@ public class User {
   private Boolean active = false;
   private final List<String> roles = new ArrayList<>();
   private LocalDateTime lastLogin;
+  private LocalDate birthDate;
 
   /** @return the event stream name in eventstore db*/
   public static String stream(String email) {
@@ -92,7 +95,7 @@ public class User {
   }
 
   public UserRoleRevoked revokeRole(String role) {
-    if (!roles.contains(role) || !active) {
+    if (!roles.contains(role) || !active || birthDate.getYear() < 1996) {
       throw new IllegalArgumentException();
     }
     return new UserRoleRevoked().role(role);
@@ -103,7 +106,21 @@ public class User {
     switch (userEvent) {
       case UserCreated event -> {
         this.email = event.email();
-        this.name = event.name();
+//        if (event.version = 1 && app.version == 1)
+          this.name = event.name();
+//        else if (app.version=1 && event.version == 2){
+//           downcaster for V1 running with 90% traffic in blue deployment seeeing V2 events publisher from green node
+//          this.name = event.firstName() + " " + event.lastName().toUpperCase(Locale.ROOT);
+//        }else if (app.version==2 && event.version==1) {
+//           upcasting
+//          this.firstName=event.name().split(" ")[0];// doen't work for thanks for Marco Aurelio de Moraes Shimomoto
+//          this.lastName=event.name().split(" ")[1]; // consider a later corrective event;
+
+          // law changed and required you to have more info/different strucutre
+          // consider migrating all events from stream-v1 to stream-v2.
+          // never delete v1 for legal => archive => S3🪣
+          // app will move to use v2
+//        }
         this.emailConfirmed = false;
         this.departmentId = event.departmentId();
         this.active = true;
