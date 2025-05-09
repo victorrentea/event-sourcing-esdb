@@ -3,6 +3,7 @@ package victor.training.sourcing;
 import com.eventstore.dbclient.EventStoreDBClient;
 import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer.MethodName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -14,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import victor.training.sourcing.user.command.SnapshotApi;
 import victor.training.sourcing.user.command.UserCommandRestApi;
 import victor.training.sourcing.user.command.UserCommandRestApi.CreateUserRequest;
 import victor.training.sourcing.user.projection.GetUserByIdProjection;
@@ -40,6 +42,8 @@ public class FullTest {
   public static final String EMAIL = "test-%s@integration.com".formatted(new Random().nextInt(1000_0000));
   @Autowired
   UserCommandRestApi commandApi;
+  @Autowired
+  SnapshotApi snapshotApi;
   @Autowired
   GetUserByIdProjection getUserByIdProjection;
   @Autowired
@@ -72,6 +76,7 @@ public class FullTest {
   void _01_create_snapshot() throws Exception {
 //    extracted(post("/users/"+EMAIL+"/snapshot"), null);
 //    commandApi.
+    snapshotApi.createSnapshot(EMAIL);
 
   }
 
@@ -83,6 +88,7 @@ public class FullTest {
     assertThat(user.departmentId()).isEqualTo("dep1");
     assertThat(user.roles()).containsExactly("app1:ADMIN");
     assertThat(user.emailValidated()).isFalse();
+    assertThat(user.active()).isTrue();
   }
 
   @Test
@@ -94,6 +100,8 @@ public class FullTest {
   @Test
   void _10_confirmEmail() throws Exception {
     commandApi.confirmEmail(EMAIL, "CHEAT");
+    commandApi.confirmEmail(EMAIL, "CHEAT");
+    commandApi.confirmEmail(EMAIL, "CHEAT");
   }
 
   @Test
@@ -104,7 +112,12 @@ public class FullTest {
   }
 
   @Test
+//  @Disabled
   void _12_user_can_now_login() throws ExecutionException, InterruptedException {
+    var user = getUserByIdProjection.getUser(EMAIL);
+    assertThat(user.emailValidated()).isTrue();
+//    assertThat(user.com).isTrue();
+
     assertThat(loginUsers.getUsersToLogin(null, null)).contains(EMAIL);
   }
 
@@ -185,7 +198,6 @@ public class FullTest {
 
   @Test
   void _99_time_travel_test() throws Exception {
-    Thread.sleep(100);
     assertThat(loginUsers.getUsersToLogin(null, null)).contains(EMAIL);
     commandApi.deactivate(EMAIL);
 
@@ -196,9 +208,11 @@ public class FullTest {
     Thread.sleep(100);
     assertThat(loginUsers.getUsersToLogin(null, null)).contains(EMAIL); // ✅
 
-    assertThat(loginUsers.getUsersToLogin(null, now().minusMillis(150L).toString())).doesNotContain(EMAIL); // ❌
+    assertThat(loginUsers.getUsersToLogin(null, now().minusMillis(150L).toString()))
+        .doesNotContain(EMAIL); // ❌
 
-    assertThat(loginUsers.getUsersToLogin(null, now().minusMillis(250L).toString())).contains(EMAIL); // ✅
+    assertThat(loginUsers.getUsersToLogin(null, now().minusMillis(250L).toString()))
+        .contains(EMAIL); // ✅
   }
 
 }

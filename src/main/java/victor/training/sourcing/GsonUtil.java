@@ -16,7 +16,7 @@ import java.util.function.Function;
 import static java.util.stream.Collectors.toMap;
 
 public class GsonUtil {
-  private static final Gson gson = new GsonBuilder()
+  public static final Gson gson = new GsonBuilder()
       .registerTypeAdapter(LocalDateTime.class, new JsonSerializer<LocalDateTime>() {
         public JsonElement serialize(LocalDateTime src, Type typeOfSrc, JsonSerializationContext context) {
           return new JsonPrimitive(src.toString());
@@ -48,7 +48,7 @@ public class GsonUtil {
     return (T) gson.fromJson(jsonString, eventClass);
   }
   @SuppressWarnings("unchecked")
-  public static <T> T parseEventData(RecordedEvent eventData, Class<UserEvent> eventClass) {
+  public static <T> T parseEventData(RecordedEvent eventData, Class<T> eventClass) {
     var jsonString = new String(eventData.getEventData());
     return (T) gson.fromJson(jsonString, eventClass);
   }

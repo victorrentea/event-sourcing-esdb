@@ -1,6 +1,7 @@
 package victor.training.sourcing.user.projection;
 
 import com.eventstore.dbclient.*;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -39,10 +40,11 @@ public class UsersThatCanLoginProjection {
     private Set<String> activeUsers = new HashSet<>();
     private Set<String> confirmedUsers = new HashSet<>();
 
+    @SneakyThrows
     public Projector(EventStoreDBClient eventStore) {
       eventStore.subscribeToAll(this, SubscribeToAllOptions.get()
-          .filter(SubscriptionFilter.newBuilder().addStreamNamePrefix("user-").build())
-          .fromStart());
+//          .filter(SubscriptionFilter.newBuilder().addStreamNamePrefix("user-").build())
+          .fromStart()).get(); //delay the tests until the subscribe is performed
     }
 
     public Projector(EventStoreDBClient eventStore, Long asOfPosition) throws ExecutionException, InterruptedException {
@@ -71,7 +73,7 @@ public class UsersThatCanLoginProjection {
         @Override
         public void onEvent(Subscription subscription, ResolvedEvent event) {
           System.out.println("Saw " + event);
-          if (!event.getEvent().getCreated().isAfter(asOfInstant)) {
+          if (event.getEvent().getCreated().isBefore(asOfInstant)) {
             Projector.this.onEvent(subscription, event);
           }
         }
@@ -80,7 +82,8 @@ public class UsersThatCanLoginProjection {
         public void onCaughtUp(Subscription subscription) {
           done.complete("Done");
         }
-      }, SubscribeToAllOptions.get().fromStart());
+      },
+          SubscribeToAllOptions.get().fromStart());
       done.get();
     }
 
@@ -89,11 +92,9 @@ public class UsersThatCanLoginProjection {
       var streamId = resolvedEvent.getEvent().getStreamId();
       String email = User.emailFromStreamName(streamId);
       UserEvent event = GsonUtil.fromEventDataSealed(resolvedEvent.getEvent(), UserEvent.class);
-//      log.info("Processing {} > {}",email, event);
+      log.info("Processing {} > {}",email, event);
       switch(event) {
         case UserEvent.UserActivated ignored -> activeUsers.add(email);
-        case UserEvent.UserDeactivated ignored -> activeUsers.remove(email);
-        case UserEvent.UserEmailConfirmed ignored -> confirmedUsers.add(email);
         default -> {/*ignored*/}
       }
     }
