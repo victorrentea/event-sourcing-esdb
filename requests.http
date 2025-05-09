@@ -1,59 +1,57 @@
-@userId=jane@b.com
-@application=CORE
+@email=jane@b.com
 
 ### create user
 POST http://127.0.0.1:8080/users
 Content-Type: application/json
 
 {
-  "email": "jane@b.com",
+  "email": "{{email}}",
   "name": "Jane Doe",
   "departmentId": "IT",
   "roles": [ "app1:USER"]
 }
 
 ### get user
-GET http://127.0.0.1:8080/users/{{userId}}
+GET http://127.0.0.1:8080/users/{{email}}
 
 
 ### update user
-PUT http://127.0.0.1:8080/users/{{userId}}
+PUT http://127.0.0.1:8080/users/{{email}}
 Content-Type: application/json
 
 {
-  "email": "jane@b.com",
   "name": "Jane Doe",
   "departmentId": "Laundry"
 }
 
 ### confirm email
-PUT http://127.0.0.1:8080/users/{{userId}}/confirm-email?token=CHEAT
+PUT http://127.0.0.1:8080/users/{{email}}/confirm-email?token=CHEAT
 
 ### add role to user
-PUT http://127.0.0.1:8080/users/{{userId}}/roles/app2:ADMIN
+PUT http://127.0.0.1:8080/users/{{email}}/roles/app2:ADMIN
 
 ### remove role from user
-DELETE http://127.0.0.1:8080/users/{{userId}}/roles/app1:ADMIN
-
-### activate user
-PUT http://127.0.0.1:8080/users/{{userId}}/activate
+DELETE http://127.0.0.1:8080/users/{{email}}/roles/app1:ADMIN
 
 ### deactivate user
-PUT http://127.0.0.1:8080/users/{{userId}}/deactivate
+PUT http://127.0.0.1:8080/users/{{email}}/deactivate
+
+### activate user
+PUT http://127.0.0.1:8080/users/{{email}}/activate
 
 ### notify login into an app
-GET http://127.0.0.1:8080/users/{{userId}}/login/{{application}}
+GET http://127.0.0.1:8080/users/{{email}}/login/APP1
 
 ### see last login per user into an app
-GET http://127.0.0.1:8080/logins/{{application}}
+GET http://127.0.0.1:8080/logins/APP1
 
 ### get users able to login
 GET http://127.0.0.1:8080/users-to-login
 
 ### get users able to login as of position
-GET http://127.0.0.1:8080/users-to-login?position=10
+GET http://127.0.0.1:8080/users-to-login?asOfPosition=10
 
 ### get users able to login as of time
-GET http://127.0.0.1:8080/users-to-login?time=2025-05-08T01:10:00Z
+GET http://127.0.0.1:8080/users-to-login?asOfTime=2025-05-08T01:10:00Z
 
 ###

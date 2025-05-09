@@ -27,10 +27,11 @@ public class GetUserByIdProjection {
       String name,
       String departmentId,
       List<String> roles,
-      Boolean emailValidated
+      Boolean emailValidated,
+      Boolean active
   ) {
     public static GetUserResponse fromUser(User user) {
-      return new GetUserResponse(user.email(), user.name(), user.departmentId(), user.roles(),user.emailConfirmed());
+      return new GetUserResponse(user.email(), user.name(), user.departmentId(), user.roles(), user.emailConfirmed(), user.active());
     }
   }
 

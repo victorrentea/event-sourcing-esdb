@@ -1,6 +1,10 @@
 package victor.training.sourcing.user.domain;
 
+import com.eventstore.dbclient.EventStoreDBClient;
+import com.eventstore.dbclient.ReadStreamOptions;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import victor.training.sourcing.GsonUtil;
 import victor.training.sourcing.user.command.UserCommandRestApi;
 import victor.training.sourcing.user.command.UserCommandRestApi.CreateUserRequest;
 
@@ -12,6 +16,7 @@ import java.util.Objects;
 import static victor.training.sourcing.user.domain.UserEvent.*;
 
 @Getter
+@Slf4j
 public class User {
   private String email; // natural id
   private String name;
@@ -22,11 +27,12 @@ public class User {
   private final List<String> roles = new ArrayList<>();
   private LocalDateTime lastLogin;
 
-  public static String getStreamName(String email) {
+  /** @return the event stream name in eventstore db*/
+  public static String stream(String email) {
     return "user-" + email.toLowerCase();
   }
 
-  public static String getEmailFromStreamId(String streamId) {
+  public static String emailFromStreamName(String streamId) {
     return streamId.substring(streamId.indexOf('-') + 1);
   }
 
@@ -40,6 +46,15 @@ public class User {
       allEvents.add(new UserRoleGranted().role(role));
     }
     return allEvents;
+  }
+
+  public static User rebuildUser(String email, EventStoreDBClient eventStore1) throws Exception {
+    var readResult = eventStore1.readStream("user-" + email, ReadStreamOptions.get().fromStart()).get();
+    User user = new User();
+    for (var resolvedEvent : readResult.getEvents()) {
+      user.apply(GsonUtil.fromEventDataSealed(resolvedEvent.getEvent(), UserEvent.class));
+    }
+    return user;
   }
 
 
@@ -84,6 +99,7 @@ public class User {
   }
 
   public void apply(UserEvent userEvent) {
+    log.info("Applying " + userEvent);
     switch (userEvent) {
       case UserCreated event -> {
         this.email = event.email();
@@ -92,13 +108,17 @@ public class User {
         this.departmentId = event.departmentId();
         this.active = true;
       }
+      case ConfirmationEmailSent event -> emailValidationToken = event.emailConfirmationToken(); // TODO remove for Fri
+      case UserEmailConfirmed event -> emailConfirmed = true; // TODO remove for Fri
       case UserPersonalDetailsUpdated event -> {
         this.name = event.name();
         this.departmentId = event.departmentId();
       }
       case UserRoleGranted event -> roles.add(event.role());
       case UserRoleRevoked event -> roles.remove(event.role());
-      default -> throw new IllegalArgumentException();
+      case UserDeactivated event -> active = false;
+      case UserActivated event -> active = true;
+      default -> throw new IllegalArgumentException("Unsupported event: " + userEvent);
     }
   }
 
@@ -113,5 +133,9 @@ public class User {
       throw new IllegalArgumentException();
     }
     return new UserActivated();
+  }
+
+  public ConfirmationEmailSent storeEmailConfirmationToken(String emailConfirmationToken) {
+    return new ConfirmationEmailSent().emailConfirmationToken(emailConfirmationToken);
   }
 }

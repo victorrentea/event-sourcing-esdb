@@ -5,7 +5,6 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.With;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
@@ -15,7 +14,8 @@ import victor.training.sourcing.user.domain.User;
 import victor.training.sourcing.user.domain.UserEvent;
 
 import java.util.List;
-import java.util.concurrent.ExecutionException;
+
+import static com.eventstore.dbclient.ExpectedRevision.noStream;
 
 @Slf4j
 @RestController
@@ -34,27 +34,25 @@ public class UserCommandRestApi {
   }
 
   @PostMapping
-  public void createUser(@RequestBody @Validated CreateUserRequest request) {
+  public void createUser(@RequestBody @Validated CreateUserRequest request) throws Exception {
     List<UserEvent> events = User.create(request);
-    var streamId = User.getStreamName(request.email());
-    eventStore.appendToStream("user-"+ request.email(),
-        AppendToStreamOptions.get().expectedRevision(ExpectedRevision.noStream()), // Unique-Key in Event-Sourcing
-        events.stream().map(GsonUtil::toEventData).iterator()); // atomic write iff the streamId is not present
-    // TODO discuss:
-    //  a) UserCreated{roles} = coarse, mapped to domain action (publisher convenience) 💖
-    //  b) UserRolesGranted{roles} = coarse-grained aggregated event
-    //  c) UserRoleGranted{role} = fine-grained events (listener convenience)
+    eventStore.appendToStream(User.stream(request.email()),
+            AppendToStreamOptions.get().expectedRevision(noStream()), // Unique-Key in Event-Sourcing
+            events.stream().map(GsonUtil::toEventData).iterator())
+        .get();
+    log.info("Created user");
+    // TODO discuss: UserCreated💖{..,roles}, +UserRolesGranted{roles}, +UserRoleGranted{role}
   }
 
   @PutMapping("/{email}/confirm-email")
-  public void confirmEmail(@PathVariable String email, @RequestParam String token) throws ExecutionException, InterruptedException {
+  public void confirmEmail(@PathVariable String email, @RequestParam String token) throws Exception {
     // === § PART 1 : read the aggregate ===
     // ❌Traditional: read current state from a DB:
     // User user = userRepo.findById(email);
 
     // ✅Event-Sourced: replay the events about this aggregate
     // 1) get events
-    var readResult = eventStore.readStream(User.getStreamName(email), ReadStreamOptions.get().fromStart()).get();
+    var readResult = eventStore.readStream(User.stream(email), ReadStreamOptions.get().fromStart()).get();
 
     // 2a) rebuild user from events : imperative-style
     User user = new User();
@@ -90,9 +88,9 @@ public class UserCommandRestApi {
 
     for (var event : events) {
       var eventData = GsonUtil.toEventData(event);
-//    eventStore.appendToStream(User.getStreamName(user.email()), events.stream().map(GsonUtil::toEventData).iterator());
-      eventStore.appendToStream(User.getStreamName(user.email()),
-//          AppendToStreamOptions.get().expectedRevision(ExpectedRevision.any()), // concurrency protection via optimistic locking
+      eventStore.appendToStream(User.stream(user.email()),
+//          AppendToStreamOptions.get().expectedRevision(ExpectedRevision.streamExists()),
+          AppendToStreamOptions.get().expectedRevision(readResult.getLastStreamPosition()), // concurrency protection ~ optimistic locking
           eventData).get();
     }
   }
@@ -103,55 +101,41 @@ public class UserCommandRestApi {
   ) {
   }
 
-  @PutMapping("/{email}")
-  public void update(@PathVariable String email, @RequestBody UpdateUserRequest request) throws ExecutionException {
-    var user = hydrate(email);
-    UserEvent.UserPersonalDetailsUpdated userPersonalDetailsUpdated = user.update(request);
-    eventStore.appendToStream("user-" + email,
+  @PutMapping("/{email}/details")
+  public void update(@PathVariable String email, @RequestBody @Validated UpdateUserRequest request) throws Exception {
+    var user = User.rebuildUser(email, eventStore);
+    var event = user.update(request);
+    eventStore.appendToStream(User.stream(email),
 //        AppendToStreamOptions.get().expectedRevision(ExpectedRevision.any()), TODO i hope this guarantees the stream exists JDD
-        GsonUtil.toEventData(userPersonalDetailsUpdated));
-  }
-
-  @SneakyThrows
-  private User hydrate(String email) {
-    var readResult = eventStore.readStream("user-" + email, ReadStreamOptions.get().fromStart()).get();
-    User user = new User();
-    for (var resolvedEvent : readResult.getEvents()) {
-      user.apply(GsonUtil.fromEventDataSealed(resolvedEvent.getEvent(), UserEvent.class));
-    }
-    return user;
+        GsonUtil.toEventData(event)).get();
   }
 
   @PutMapping("/{email}/roles/{role}")
-  public void grantRole(@PathVariable String email, @PathVariable String role) throws ExecutionException {
-    var user = hydrate(email);
+  public void grantRole(@PathVariable String email, @PathVariable String role) throws Exception {
+    var user = User.rebuildUser(email, eventStore);
     var event = user.grantRole(role);
-    eventStore.appendToStream(User.getStreamName(email),
-        GsonUtil.toEventData(event));
+    eventStore.appendToStream(User.stream(email), GsonUtil.toEventData(event)).get();
   }
 
   @DeleteMapping("/{email}/roles/{role}")
-  public void revokeRole(@PathVariable String email, @PathVariable String role) throws ExecutionException {
-    var user = hydrate(email);
+  public void revokeRole(@PathVariable String email, @PathVariable String role) throws Exception {
+    var user = User.rebuildUser(email, eventStore);
     var event = user.revokeRole(role);
-    eventStore.appendToStream(User.getStreamName(email),
-        GsonUtil.toEventData(event));
+    eventStore.appendToStream(User.stream(email), GsonUtil.toEventData(event)).get();
   }
 
   @PutMapping("/{email}/deactivate")
-  public void deactivate(@PathVariable String email) {
-    var user = hydrate(email);
+  public void deactivate(@PathVariable String email) throws Exception {
+    var user = User.rebuildUser(email, eventStore);
     var event = user.deactivate();
-    eventStore.appendToStream(User.getStreamName(email),
-        GsonUtil.toEventData(event));
+    eventStore.appendToStream(User.stream(email), GsonUtil.toEventData(event)).get();
   }
 
   @PutMapping("/{email}/activate")
-  public void activate(@PathVariable String email) {
-    var user = hydrate(email);
+  public void activate(@PathVariable String email) throws Exception {
+    var user = User.rebuildUser(email, eventStore);
     var event = user.activate();
-    eventStore.appendToStream(User.getStreamName(email),
-        GsonUtil.toEventData(event));
+    eventStore.appendToStream(User.stream(email), GsonUtil.toEventData(event)).get();
   }
 
 }
