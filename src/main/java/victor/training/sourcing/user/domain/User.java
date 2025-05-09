@@ -133,6 +133,7 @@ public class User {
       case UserRoleRevoked event -> roles.remove(event.role());
       case UserDeactivated event -> active = false;
       case UserActivated event -> active = true;
+      case UserEmailConfirmed event -> emailConfirmed = true;
       default -> throw new IllegalArgumentException("Unsupported event: " + userEvent);
     }
   }
