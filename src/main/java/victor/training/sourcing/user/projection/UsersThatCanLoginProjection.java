@@ -91,7 +91,6 @@ public class UsersThatCanLoginProjection {
       UserEvent event = GsonUtil.fromEventDataSealed(resolvedEvent.getEvent(), UserEvent.class);
       log.info("Processing {} > {}",email, event);
       switch(event) {
-        case UserEvent.UserCreated ignored -> activeUsers.add(email); // TODO remove for fri
         case UserEvent.UserActivated ignored -> activeUsers.add(email);
         case UserEvent.UserDeactivated ignored -> activeUsers.remove(email);
         case UserEvent.UserEmailConfirmed ignored -> confirmedUsers.add(email);

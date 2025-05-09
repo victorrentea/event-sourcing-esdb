@@ -108,8 +108,6 @@ public class User {
         this.departmentId = event.departmentId();
         this.active = true;
       }
-      case ConfirmationEmailSent event -> emailValidationToken = event.emailConfirmationToken(); // TODO remove for Fri
-      case UserEmailConfirmed event -> emailConfirmed = true; // TODO remove for Fri
       case UserPersonalDetailsUpdated event -> {
         this.name = event.name();
         this.departmentId = event.departmentId();

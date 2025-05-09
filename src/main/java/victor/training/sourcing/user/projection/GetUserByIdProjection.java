@@ -46,11 +46,4 @@ public class GetUserByIdProjection {
     }
     return GetUserResponse.fromUser(user);
   }
-
-
-  @GetMapping
-  public List<GetUserResponse> getAllUsers() {
-    // TODO
-    return null;
-  }
 }

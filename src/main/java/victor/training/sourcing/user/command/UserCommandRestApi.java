@@ -135,7 +135,7 @@ public class UserCommandRestApi {
   public void activate(@PathVariable String email) throws Exception {
     var user = User.rebuildUser(email, eventStore);
     var event = user.activate();
-    eventStore.appendToStream(User.stream(email), GsonUtil.toEventData(event)).get();
+    eventStore.appendToStream(User.stream(email), GsonUtil.toEventData(event)); // TODO causes flaky tests
   }
 
 }

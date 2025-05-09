@@ -38,9 +38,7 @@ public class SendConfirmationEmailReactor extends SubscriptionListener {
     // TODO fri
     // TODO send email
     // TODO write token in user
-    var user = User.rebuildUser(email, eventStore);
-    var event = user.storeEmailConfirmationToken(emailConfirmationToken);
-    eventStore.appendToStream(User.stream(email), GsonUtil.toEventData(event)).get();
+
     log.info("Sent confirmation email");
   }
 

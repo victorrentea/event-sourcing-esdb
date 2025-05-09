@@ -15,7 +15,7 @@ public sealed abstract class UserEvent extends AbstractEvent
     private String lastName;
     private String email;
     private String departmentId;
-    // TODO @tech-backlong merge roles in here to have events match the user intent
+    // TODO @tech-backlog merge roles in here to have events match the user intent
   }
 
   @Data
