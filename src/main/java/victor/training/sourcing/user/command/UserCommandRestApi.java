@@ -106,7 +106,7 @@ public class UserCommandRestApi {
     var user = User.rebuildUser(email, eventStore);
     var event = user.update(request);
     eventStore.appendToStream(User.stream(email),
-        AppendToStreamOptions.get().expectedRevision(ExpectedRevision.streamExists()),// TODO i hope this guarantees the stream exists JDD
+        AppendToStreamOptions.get().expectedRevision(ExpectedRevision.streamExists()),// this guarantees the stream exists
         GsonUtil.toEventData(event)).get();
   }
 
