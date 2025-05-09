@@ -1,20 +1,24 @@
 package victor.training.sourcing;
 
 import com.eventstore.dbclient.EventStoreDBClient;
+import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.MethodOrderer.MethodName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import victor.training.sourcing.user.command.UserCommandRestApi;
 import victor.training.sourcing.user.command.UserCommandRestApi.CreateUserRequest;
 import victor.training.sourcing.user.projection.GetUserByIdProjection;
 import victor.training.sourcing.user.projection.UsersThatCanLoginProjection;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
@@ -23,12 +27,15 @@ import static java.time.Instant.now;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Slf4j
 @SpringBootTest
 @ActiveProfiles("test")
 @TestInstance(PER_CLASS)
 @TestMethodOrder(MethodName.class)
+@AutoConfigureMockMvc
 public class FullTest {
   public static final String EMAIL = "test-%s@integration.com".formatted(new Random().nextInt(1000_0000));
   @Autowired
@@ -39,6 +46,8 @@ public class FullTest {
   UsersThatCanLoginProjection loginUsers;
   @Autowired
   EventStoreDBClient eventStore;
+  @Autowired
+  MockMvc mockMvc;
 
   @Test
   void _01_create() throws Exception {
@@ -48,7 +57,19 @@ public class FullTest {
         "dep1",
         List.of("app1:ADMIN"));
 
-    commandApi.createUser(createRequest);
+    extracted(post("/users"), createRequest);
+  }
+
+  private void extracted(MockHttpServletRequestBuilder request, Object body) throws Exception {
+    mockMvc.perform(request
+            .content(new Gson().toJson(body))
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  void _01_create_snapshot() throws Exception {
+    extracted(post("/users/"+EMAIL+"/snapshot"), null);
   }
 
   @Test
@@ -73,7 +94,7 @@ public class FullTest {
   }
 
   @Test
-  void _11_get_emailWasValidated() throws ExecutionException, InterruptedException {
+  void _11_get_emailWasConfirmed() throws ExecutionException, InterruptedException {
     var user = getUserByIdProjection.getUser(EMAIL);
     assertThat(user.emailValidated()).isTrue();
     assertThat(user.active()).isTrue();
@@ -176,4 +197,5 @@ public class FullTest {
 
     assertThat(loginUsers.getUsersToLogin(null, now().minusMillis(250L).toString())).contains(EMAIL); // ✅
   }
+
 }

@@ -23,7 +23,7 @@ public class GsonUtil {
       })
       .create();
 
-  public static EventData toEventData(AbstractEvent event) {
+  public static EventData toEventData(Object event) {
     var eventType = event.getClass().getSimpleName();
     var jsonString = gson.toJson(event);
     return EventData.builderAsJson(eventType, jsonString.getBytes())

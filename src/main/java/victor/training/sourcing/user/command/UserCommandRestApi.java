@@ -138,4 +138,5 @@ public class UserCommandRestApi {
     eventStore.appendToStream(User.stream(email), GsonUtil.toEventData(event)); // TODO causes flaky tests
   }
 
+
 }

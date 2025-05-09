@@ -89,7 +89,7 @@ public class UsersThatCanLoginProjection {
       var streamId = resolvedEvent.getEvent().getStreamId();
       String email = User.emailFromStreamName(streamId);
       UserEvent event = GsonUtil.fromEventDataSealed(resolvedEvent.getEvent(), UserEvent.class);
-      log.info("Processing {} > {}",email, event);
+//      log.info("Processing {} > {}",email, event);
       switch(event) {
         case UserEvent.UserActivated ignored -> activeUsers.add(email);
         case UserEvent.UserDeactivated ignored -> activeUsers.remove(email);

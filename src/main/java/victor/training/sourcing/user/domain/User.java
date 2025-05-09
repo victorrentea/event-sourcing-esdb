@@ -48,8 +48,8 @@ public class User {
     return allEvents;
   }
 
-  public static User rebuildUser(String email, EventStoreDBClient eventStore1) throws Exception {
-    var readResult = eventStore1.readStream("user-" + email, ReadStreamOptions.get().fromStart()).get();
+  public static User rebuildUser(String email, EventStoreDBClient eventStore) throws Exception {
+    var readResult = eventStore.readStream("user-" + email, ReadStreamOptions.get().fromStart()).get();
     User user = new User();
     for (var resolvedEvent : readResult.getEvents()) {
       user.apply(GsonUtil.fromEventDataSealed(resolvedEvent.getEvent(), UserEvent.class));

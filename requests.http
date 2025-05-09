@@ -54,4 +54,7 @@ GET http://127.0.0.1:8080/users-to-login?asOfPosition=10
 ### get users able to login as of time
 GET http://127.0.0.1:8080/users-to-login?asOfTime=2025-05-08T01:10:00Z
 
+### create snapshot
+POST http://127.0.0.1:8080/users/{{email}}/snapshot
+
 ###
